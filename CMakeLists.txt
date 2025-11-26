@@ -91,6 +91,7 @@ find_package(catkin REQUIRED COMPONENTS
   vikit_ros
   cv_bridge
   image_transport
+  livox_ros_driver
 )
 
 find_package(Eigen3 REQUIRED)
@@ -103,7 +104,7 @@ set(Sophus_LIBRARIES libSophus.so)
 
 # Define the catkin package
 catkin_package(
-  CATKIN_DEPENDS geometry_msgs nav_msgs roscpp rospy std_msgs message_runtime cv_bridge vikit_common vikit_ros image_transport
+  CATKIN_DEPENDS geometry_msgs nav_msgs roscpp rospy std_msgs message_runtime cv_bridge vikit_common vikit_ros image_transport livox_ros_driver
   DEPENDS EIGEN3 PCL OpenCV Sophus
 )
 
@@ -139,6 +140,12 @@ target_link_libraries(fastlivo_mapping
   ${OpenCV_LIBRARIES}
   ${Sophus_LIBRARIES}
   ${Boost_LIBRARIES}
+)
+
+# Add the pointcloud to livox converter node
+add_executable(pointcloud_to_livox src/pointcloud_to_livox.cpp)
+target_link_libraries(pointcloud_to_livox
+  ${catkin_LIBRARIES}
 )
 
 # Link mimalloc if found
