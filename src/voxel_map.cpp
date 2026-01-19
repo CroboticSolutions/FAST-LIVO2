@@ -838,7 +838,7 @@ void VoxelMapManager::pubSinglePlane(visualization_msgs::MarkerArray &plane_pub,
                                      const float alpha, const Eigen::Vector3d rgb)
 {
   visualization_msgs::Marker plane;
-  plane.header.frame_id = "camera_init";
+  plane.header.frame_id = INIT_TF;
   plane.header.stamp = ros::Time();
   plane.ns = plane_ns;
   plane.id = single_plane.id_;
