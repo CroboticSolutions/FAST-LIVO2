@@ -35,7 +35,7 @@ using namespace Sophus;
 #define MAT_FROM_ARRAY(v) v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8]
 #define DEBUG_FILE_DIR(name) (string(string(ROOT_DIR) + "Log/" + name))
 #define INIT_TF "world"  // Global frame ID for ROS coordinate system
-#define TF_LIDAR_BASE "lidar_base"  // LiDAR base frame ID after mapping
+#define TF_BASE "minithex_base"  // LiDAR base frame ID after mapping
 
 enum LID_TYPE
 {

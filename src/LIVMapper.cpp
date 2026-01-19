@@ -1272,7 +1272,7 @@ template <typename T> void LIVMapper::set_posestamp(T &out)
 void LIVMapper::publish_odometry(const ros::Publisher &pubOdomAftMapped)
 {
   odomAftMapped.header.frame_id = INIT_TF;
-  odomAftMapped.child_frame_id = TF_LIDAR_BASE;
+  odomAftMapped.child_frame_id = TF_BASE;
   odomAftMapped.header.stamp = ros::Time::now(); //.ros::Time()fromSec(last_timestamp_lidar);
   set_posestamp(odomAftMapped.pose.pose);
 
@@ -1285,7 +1285,7 @@ void LIVMapper::publish_odometry(const ros::Publisher &pubOdomAftMapped)
   q.setY(geoQuat.y);
   q.setZ(geoQuat.z);
   transform.setRotation(q);
-  br.sendTransform( tf::StampedTransform(transform, odomAftMapped.header.stamp, INIT_TF, TF_LIDAR_BASE) );
+  br.sendTransform( tf::StampedTransform(transform, odomAftMapped.header.stamp, INIT_TF, TF_BASE) );
   pubOdomAftMapped.publish(odomAftMapped);
 }
 
