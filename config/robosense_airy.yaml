@@ -1,14 +1,16 @@
 common:
   img_topic: "/left_camera/image"
-  lid_topic: "/moj_cloud"
-  imu_topic: "/livox/imu"
+  lid_topic: "/rslidar_points"
+  imu_topic: "/rslidar_imu_data"
   img_en: 0
   lidar_en: 1
   ros_driver_bug_fix: false
 
 extrin_calib:
-  extrinsic_T: [0.04165, 0.02326, -0.0284]
-  extrinsic_R: [1, 0, 0, 0, 1, 0, 0, 0, 1]
+  extrinsic_T: [0.004250, 0.004180, -0.004460]
+  extrinsic_R: [0.000280, -0.999993, 0.003629,
+               -0.999946, -0.000242, 0.010384,
+               -0.010384, -0.003632, -0.999939]
   Rcl: [0.00610193,-0.999863,-0.0154172,
         -0.00615449,0.0153796,-0.999863,
         0.999962,0.00619598,-0.0060598] 
@@ -20,11 +22,11 @@ time_offset:
   exposure_time_init: 0.0
 
 preprocess:
-  point_filter_num: 1
+  point_filter_num: 5
   filter_size_surf: 0.1
-  lidar_type: 1 # Livox Avia LiDAR
-  scan_line: 6
-  blind: 0.8
+  lidar_type: 7 # Livox Avia LiDAR
+  scan_line: 96
+  blind: 0.1
 
 vio:
   max_iterations: 5
@@ -39,10 +41,10 @@ vio:
   inv_expo_cov: 0.1
 
 imu:
-  imu_en: false
+  imu_en: true
   imu_int_frame: 30
-  acc_cov: 0.5 # 0.2
-  gyr_cov: 0.3 # 0.5
+  acc_cov: 0.1 # 0.2
+  gyr_cov: 0.1 # 0.5
   b_acc_cov: 0.0001 # 0.1
   b_gyr_cov: 0.0001 # 0.1
 

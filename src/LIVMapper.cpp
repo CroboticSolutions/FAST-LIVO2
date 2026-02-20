@@ -478,6 +478,8 @@ void LIVMapper::handleLIO()
 
 void LIVMapper::savePCD() 
 {
+  std::cout << "rgb cloud size: " << pcl_wait_save->points.size() << std::endl;
+  std::cout << "intensity cloud size: " << pcl_wait_save_intensity->points.size() << std::endl;
   if (pcd_save_en && (pcl_wait_save->points.size() > 0 || pcl_wait_save_intensity->points.size() > 0) && pcd_save_interval < 0) 
   {
     std::string raw_points_dir = std::string(ROOT_DIR) + "Log/PCD/all_raw_points.pcd";
@@ -1030,7 +1032,7 @@ bool LIVMapper::sync_packages(LidarMeasureGroup &meas)
     {
       double img_capture_time = img_time_buffer.front() + exposure_time_init;
       meas.lio_vio_flg = VIO;
-      // printf("[ Data Cut ] VIO \n");
+      cout << "LIO !!!!!" << endl;
       meas.measures.clear();
       double imu_time = imu_buffer.front()->header.stamp.toSec();
 
@@ -1070,6 +1072,7 @@ bool LIVMapper::sync_packages(LidarMeasureGroup &meas)
 
   case ONLY_LO:
   {
+    cout << "LO !!!!!" << endl;
     if (!lidar_pushed) 
     { 
       // If not in lidar scan, need to generate new meas
