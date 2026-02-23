@@ -1,0 +1,48 @@
+# Tmuxinator configuration for FAST-LIVO2 SLAM
+# Usage:
+#   tmuxinator start slam mode=robosense  # For real RoboSense AIRY LiDAR
+#   tmuxinator start slam mode=sim        # For simulation mode
+#
+# Or if installed to ~/.config/tmuxinator/:
+#   tmuxinator start slam mode=robosense
+#   tmuxinator start slam mode=sim
+#
+# Default mode is 'robosense' if not specified
+
+name: slam
+root: /root/catkin_ws
+
+# Runs on project start, always
+on_project_start: source /root/catkin_ws/devel/setup.bash
+
+# Controls whether the tmux session should be attached to automatically. Defaults to true.
+# attach: false
+
+windows:
+  <% mode = @args[0] || "robosense" %>
+  <% if mode == "sim" %>
+  # ============================================
+  # SIMULATION MODE
+  # ============================================
+  - slam:
+      layout: even-vertical
+      panes:
+        - fast_livo:
+            - source /root/catkin_ws/devel/setup.bash
+            - /root/catkin_ws/src/FAST-LIVO2/scripts/wait_for_lidar_scan.sh /lidar3d/points 60
+            - roslaunch fast_livo mapping_sim.launch
+  <% else %>
+  # ============================================
+  # ROBOSENSE MODE (default)
+  # ============================================
+  - slam:
+      layout: even-vertical
+      panes:
+        - rslidar:
+            - source /root/catkin_ws/devel/setup.bash
+            - roslaunch rslidar_sdk start.launch
+        - fast_livo:
+            - source /root/catkin_ws/devel/setup.bash
+            - /root/catkin_ws/src/FAST-LIVO2/scripts/wait_for_lidar_scan.sh /rslidar_points 30
+            - roslaunch fast_livo mapping_robosense.launch
+  <% end %>

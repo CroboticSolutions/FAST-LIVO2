@@ -97,12 +97,39 @@ source ~/catkin_ws/devel/setup.bash
 
 ## 4. Run our examples
 
-Download our collected rosbag files via OneDrive ([**FAST-LIVO2-Dataset**](https://connecthkuhk-my.sharepoint.com/:f:/g/personal/zhengcr_connect_hku_hk/ErdFNQtjMxZOorYKDTtK4ugBkogXfq1OfDm90GECouuIQA?e=KngY9Z)). 
+Download our collected rosbag files via OneDrive ([**FAST-LIVO2-Dataset**](https://connecthkuhk-my.sharepoint.com/:f:/g/personal/zhengcr_connect_hku_hk/ErdFNQtjMxZOorYKDTtK4ugBkogXfq1OfDm90GECouuIQA?e=KngY9Z)).
 
 ```
 roslaunch fast_livo mapping_avia.launch
 rosbag play YOUR_DOWNLOADED.bag
 ```
+
+### 4.1 Tmuxinator Setup
+
+For automated launch with proper synchronization, install the tmuxinator configuration:
+
+```bash
+mkdir -p ~/.config/tmuxinator
+cp /root/catkin_ws/src/FAST-LIVO2/slam.yml ~/.config/tmuxinator/
+```
+
+Then start the SLAM system with:
+
+**For RoboSense AIRY LiDAR (default):**
+```bash
+tmuxinator start slam robosense
+# or simply:
+tmuxinator start slam
+```
+
+**For Simulation mode:**
+```bash
+tmuxinator start slam sim
+```
+
+This will automatically:
+- **RoboSense mode**: Launch rslidar_sdk, wait for `/rslidar_points` topic, then launch FAST-LIVO2 mapping
+- **Simulation mode**: Wait for `/lidar3d/points` topic from your simulator, then launch FAST-LIVO2 mapping
 
 
 ## 5. License
