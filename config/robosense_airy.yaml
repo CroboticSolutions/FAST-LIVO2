@@ -6,6 +6,7 @@ common:
   lidar_en: 1
   ros_driver_bug_fix: false
 
+# TODO: Check what these are
 extrin_calib:
   extrinsic_T: [0.004250, 0.004180, -0.004460]
   extrinsic_R: [0.000280, -0.999993, 0.003629,
