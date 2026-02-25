@@ -8,10 +8,16 @@ common:
 
 # TODO: Check what these are
 extrin_calib:
+  # SDF pose: <pose>0 0 -0.1 3.14159265 0 0</pose>  (x y z roll pitch yaw in body frame)
   extrinsic_T: [0.0, 0.0, 0.1]
-  extrinsic_R: [1, 0, 0,
-               0, 1, 0,
-               0, 0, 1]
+  # R_x(pi): LiDAR mounted upside-down (roll = pi)
+  extrinsic_R: [1,  0,  0,
+                0, 1,  0,
+                0,  0, 1]
+
+  #extrinsic_R: [ 0.9848, 0.0000,  0.1736,  # +0.175 rad pitch down
+  #               0.0000, 1.0000,  0.0000,
+  #              -0.1736, 0.0000,  0.9848]
                
   Rcl: [0.00610193,-0.999863,-0.0154172,
         -0.00615449,0.0153796,-0.999863,
@@ -26,9 +32,9 @@ time_offset:
 preprocess:
   point_filter_num: 1
   filter_size_surf: 0.1
-  lidar_type: 7 # Livox Avia LiDAR
+  lidar_type: 1 # Livox Avia CustomMsg (used with pointcloud_to_livox converter)
   scan_line: 96
-  blind: 0.1
+  blind: 0.2
 
 vio:
   max_iterations: 5
@@ -45,10 +51,10 @@ vio:
 imu:
   imu_en: true
   imu_int_frame: 30
-  acc_cov: 0.1 # 0.2
-  gyr_cov: 0.1 # 0.5
-  b_acc_cov: 0.0001 # 0.1
-  b_gyr_cov: 0.0001 # 0.1
+  acc_cov: 0.2 #0.1 # 0.2
+  gyr_cov: 0.5 #0.1 # 0.5
+  b_acc_cov: 0.1 #0.0001 # 0.1
+  b_gyr_cov: 0.1 #0.0001 # 0.1
 
 lio:
   max_iterations: 5

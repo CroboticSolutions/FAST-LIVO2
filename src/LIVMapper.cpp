@@ -1276,7 +1276,7 @@ void LIVMapper::publish_odometry(const ros::Publisher &pubOdomAftMapped)
 {
   odomAftMapped.header.frame_id = INIT_TF;
   odomAftMapped.child_frame_id = TF_BASE;
-  odomAftMapped.header.stamp = ros::Time::now(); //.ros::Time()fromSec(last_timestamp_lidar);
+  odomAftMapped.header.stamp = ros::Time().fromSec(last_timestamp_lidar);
   set_posestamp(odomAftMapped.pose.pose);
 
   // Populate covariance from EKF state covariance matrix.
@@ -1312,7 +1312,7 @@ void LIVMapper::publish_odometry(const ros::Publisher &pubOdomAftMapped)
 
 void LIVMapper::publish_mavros(const ros::Publisher &mavros_pose_publisher)
 {
-  msg_body_pose.header.stamp = ros::Time::now();
+  msg_body_pose.header.stamp = ros::Time().fromSec(last_timestamp_lidar);
   msg_body_pose.header.frame_id = INIT_TF;
   set_posestamp(msg_body_pose.pose);
   mavros_pose_publisher.publish(msg_body_pose);
