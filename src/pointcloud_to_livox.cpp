@@ -20,6 +20,7 @@ public:
         nh_.param<std::string>("input_topic", input_topic_, "/lidar3d/points");
         nh_.param<std::string>("output_topic", output_topic_, "/livox/lidar");
         nh_.param<int>("lidar_id", lidar_id_, 0);
+        nh_.param<bool>("use_pc_time", use_pc_time_, false);
 
         // Setup subscriber and publisher
         sub_ = nh_.subscribe(input_topic_, 10, &PointCloudToLivox::pointcloudCallback, this);
@@ -28,6 +29,7 @@ public:
         ROS_INFO("PointCloud to Livox republisher started");
         ROS_INFO("  Subscribing to: %s", input_topic_.c_str());
         ROS_INFO("  Publishing to: %s", output_topic_.c_str());
+        ROS_INFO("  use_pc_time: %s", use_pc_time_ ? "true (restamping to PC receive time)" : "false (using original sensor timestamp)");
     }
 
 private:
@@ -35,12 +37,16 @@ private:
     {
         livox_ros_driver::CustomMsg livox_msg;
 
-        // Fill header
+        // Fill header, optionally restamping to PC receive time
         livox_msg.header = cloud_msg->header;
-        
-        // Set timebase from header timestamp (in nanoseconds)
-        livox_msg.timebase = static_cast<uint64_t>(cloud_msg->header.stamp.sec) * 1000000000ULL 
-                           + static_cast<uint64_t>(cloud_msg->header.stamp.nsec);
+        if (use_pc_time_)
+        {
+            livox_msg.header.stamp = ros::Time::now();
+        }
+
+        // Set timebase from (possibly restamped) header timestamp (in nanoseconds)
+        livox_msg.timebase = static_cast<uint64_t>(livox_msg.header.stamp.sec) * 1000000000ULL
+                           + static_cast<uint64_t>(livox_msg.header.stamp.nsec);
         
         // Set lidar id
         livox_msg.lidar_id = static_cast<uint8_t>(lidar_id_);
@@ -118,6 +124,7 @@ private:
     std::string input_topic_;
     std::string output_topic_;
     int lidar_id_;
+    bool use_pc_time_;
 };
 
 int main(int argc, char** argv)

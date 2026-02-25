@@ -254,9 +254,9 @@ void LIVMapper::processImu()
 
   // double t_prop = omp_get_wtime();
 
-  // std::cout << "[ Mapping ] feats_undistort: " << feats_undistort->size() << std::endl;
-  // std::cout << "[ Mapping ] predict cov: " << _state.cov.diagonal().transpose() << std::endl;
-  // std::cout << "[ Mapping ] predict sta: " << state_propagat.pos_end.transpose() << state_propagat.vel_end.transpose() << std::endl;
+  std::cout << "[ Mapping ] feats_undistort: " << feats_undistort->size() << std::endl;
+  std::cout << "[ Mapping ] predict cov: " << _state.cov.diagonal().transpose() << std::endl;
+   std::cout << "[ Mapping ] predict sta: " << state_propagat.pos_end.transpose() << state_propagat.vel_end.transpose() << std::endl;
 }
 
 void LIVMapper::stateEstimationAndMapping() 
@@ -1278,6 +1278,24 @@ void LIVMapper::publish_odometry(const ros::Publisher &pubOdomAftMapped)
   odomAftMapped.child_frame_id = TF_BASE;
   odomAftMapped.header.stamp = ros::Time::now(); //.ros::Time()fromSec(last_timestamp_lidar);
   set_posestamp(odomAftMapped.pose.pose);
+
+  // Populate covariance from EKF state covariance matrix.
+  // State layout: [0-2]=rotation, [3-5]=position, [6-8]=velocity
+  // nav_msgs/Odometry covariance arrays are 6x6 row-major: [x,y,z, rx,ry,rz]
+  odomAftMapped.pose.covariance.fill(0.0);
+  odomAftMapped.twist.covariance.fill(0.0);
+  const M3D pos_cov = _state.cov.block<3, 3>(3, 3);
+  const M3D rot_cov = _state.cov.block<3, 3>(0, 0);
+  const M3D vel_cov = _state.cov.block<3, 3>(7, 7);
+  for (int i = 0; i < 3; i++)
+  {
+    for (int j = 0; j < 3; j++)
+    {
+      odomAftMapped.pose.covariance[i * 6 + j]               = pos_cov(i, j); // position block
+      odomAftMapped.pose.covariance[(i + 3) * 6 + (j + 3)]   = rot_cov(i, j); // rotation block
+      odomAftMapped.twist.covariance[i * 6 + j]              = vel_cov(i, j); // linear velocity block
+    }
+  }
 
   static tf::TransformBroadcaster br;
   tf::Transform transform;

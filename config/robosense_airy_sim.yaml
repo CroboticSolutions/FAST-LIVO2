@@ -1,17 +1,18 @@
 common:
   img_topic: "/left_camera/image"
-  lid_topic: "/rslidar_points"
-  imu_topic: "/rslidar_imu_data"
+  lid_topic: "/livox/lidar"
+  imu_topic: "/minithex/imu"
   img_en: 0
   lidar_en: 1
   ros_driver_bug_fix: false
 
 # TODO: Check what these are
 extrin_calib:
-  extrinsic_T: [0.004250, 0.004180, -0.004460]
-  extrinsic_R: [0.000280, -0.999993, 0.003629,
-               -0.999946, -0.000242, 0.010384,
-               -0.010384, -0.003632, -0.999939]
+  extrinsic_T: [0.0, 0.0, 0.1]
+  extrinsic_R: [1, 0, 0,
+               0, 1, 0,
+               0, 0, 1]
+               
   Rcl: [0.00610193,-0.999863,-0.0154172,
         -0.00615449,0.0153796,-0.999863,
         0.999962,0.00619598,-0.0060598] 
@@ -23,7 +24,7 @@ time_offset:
   exposure_time_init: 0.0
 
 preprocess:
-  point_filter_num: 5
+  point_filter_num: 1
   filter_size_surf: 0.1
   lidar_type: 7 # Livox Avia LiDAR
   scan_line: 96
@@ -80,7 +81,7 @@ evo:
   pose_output_en: false
 
 pcd_save:
-  pcd_save_en: true
+  pcd_save_en: false
   colmap_output_en: false # need to set interval = -1
   filter_size_pcd: 0.15
   interval: -1

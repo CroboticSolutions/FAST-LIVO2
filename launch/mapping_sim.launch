@@ -2,6 +2,8 @@
 <!-- Launch file for Livox AVIA LiDAR -->
 
 	<arg name="rviz" default="true" />
+	<arg name="use_pc_time" default="true" />
+	<arg name="calibrate" default="true" />
 
 	<rosparam command="load" file="$(find fast_livo)/config/sim.yaml" />
 
@@ -20,8 +22,23 @@
 		<param name="input_topic" value="/lidar3d/points" />
 		<param name="output_topic" value="/livox/lidar" />
 		<param name="lidar_id" value="0" />
+		<param name="use_pc_time" value="$(arg use_pc_time)" />
 	</node>
+
+
+	<!-- LiDAR-IMU extrinsic rotation calibrator -->
+	<group if="$(arg calibrate)">
+		<node pkg="fast_livo" type="lidar_imu_calibrator.py" name="lidar_imu_calibrator" output="screen">
+			<param name="slam_topic"       value="/aft_mapped_to_init" />
+			<param name="imu_topic"        value="/minithex/imu" />
+			<param name="min_pairs"        value="100" />
+			<param name="omega_min_norm"   value="0.05" />
+			<param name="calibrate_period" value="10.0" />
+		</node>
+	</group>
+
 
 launch-prefix="gdb -ex run --args"
 launch-prefix="valgrind --leak-check=full"
+
 </launch> 	
