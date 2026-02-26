@@ -19,7 +19,7 @@
 
 	<!-- PointCloud to Livox CustomMsg converter -->
 	<node pkg="fast_livo" type="pointcloud_to_livox" name="pointcloud_to_livox" output="screen">
-		<param name="input_topic" value="/lidar3d/points" />
+		<param name="input_topic" value="/lidar3d/points/restamped" />
 		<param name="output_topic" value="/livox/lidar" />
 		<param name="lidar_id" value="0" />
 		<param name="use_pc_time" value="$(arg use_pc_time)" />

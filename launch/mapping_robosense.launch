@@ -2,12 +2,23 @@
 <!-- Launch file for Livox AVIA LiDAR -->
 
 	<arg name="rviz" default="true" />
+	<arg name="real_robot" default="false" />
+	<arg name="use_pc_time" default="false" />
 
 	<rosparam command="load" file="$(find fast_livo)/config/robosense_airy.yaml" />
 
 	<node pkg="fast_livo" type="fastlivo_mapping" name="laserMapping" output="screen">
 		<rosparam file="$(find fast_livo)/config/camera_pinhole.yaml" />
 	</node>
+
+	<!-- here goes the TF between robot and LIDAR -->
+	<node pkg="tf" type="static_transform_publisher" name="minithex_base_to_rslidar"
+		args="0 0 0.1 3.14159265 0 0 minithex_base rslidar 100" />
+
+	<!-- When running on the real robot, relay /aft_mapped_to_init odometry as world→minithex_base TF -->
+	<group if="$(arg real_robot)">
+		<node pkg="fast_livo" type="odom_to_tf.py" name="odom_to_tf" output="screen" />
+	</group>
 	
 	<!--  <group if="$(arg rviz)">
 		<node launch-prefix="nice" pkg="rviz" type="rviz" name="rviz" args="-d $(find fast_livo)/rviz_cfg/fast_livo2.rviz" />
@@ -17,4 +28,7 @@
 
 launch-prefix="gdb -ex run --args"
 launch-prefix="valgrind --leak-check=full"
+
+
+
 </launch> 	

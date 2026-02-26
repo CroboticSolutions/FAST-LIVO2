@@ -1,7 +1,7 @@
 common:
   img_topic: "/left_camera/image"
-  lid_topic: "/livox/lidar"
-  imu_topic: "/minithex/imu"
+  lid_topic: "/rslidar_points"
+  imu_topic: "/rslidar_imu_data"
   img_en: 0
   lidar_en: 1
   ros_driver_bug_fix: false
@@ -9,11 +9,11 @@ common:
 # TODO: Check what these are
 extrin_calib:
   # SDF pose: <pose>0 0 -0.1 3.14159265 0 0</pose>  (x y z roll pitch yaw in body frame)
-  extrinsic_T: [0.0, 0.0, 0.1]
-  # R_x(pi): LiDAR mounted upside-down (roll = pi)
-  extrinsic_R: [1,  0,  0,
-                0, 1,  0,
-                0,  0, 1]
+  extrinsic_T: [ 0.0, 0.0, 0.0 ]
+  extrinsic_R: [ 1., 0., 0.,
+                0., 1., 0.,
+                 0., 0., 1.]
+
 
   #extrinsic_R: [ 0.9848, 0.0000,  0.1736,  # +0.175 rad pitch down
   #               0.0000, 1.0000,  0.0000,
@@ -32,7 +32,7 @@ time_offset:
 preprocess:
   point_filter_num: 1
   filter_size_surf: 0.1
-  lidar_type: 1 # Livox Avia CustomMsg (used with pointcloud_to_livox converter)
+  lidar_type: 7 # Livox Avia CustomMsg (used with pointcloud_to_livox converter)
   scan_line: 96
   blind: 0.2
 
