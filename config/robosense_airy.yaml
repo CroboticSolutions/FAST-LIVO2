@@ -9,10 +9,17 @@ common:
 # TODO: Check what these are
 extrin_calib:
   # SDF pose: <pose>0 0 -0.1 3.14159265 0 0</pose>  (x y z roll pitch yaw in body frame)
-  extrinsic_T: [ 0.0, 0.0, 0.0 ]
-  extrinsic_R: [ 1., 0., 0.,
-                0., 1., 0.,
-                 0., 0., 1.]
+  #extrinsic_T: [ 0.0, 0.0, 0.0 ]
+  #extrinsic_R: [ 0., -1., 0.,
+  #              -1., 0., 0.,
+  #               0., 0., -1.]
+  # Robosense IMU Airy test data
+  extrinsic_T: [ 0.004156, 0.004265, -0.004468 ]
+  extrinsic_R: [-0.007468, -0.999971, 0.001664,
+                -0.999966, -0.007474, -0.003502,
+                 0.003515, -0.001637, -0.999992]
+
+
 
 
   #extrinsic_R: [ 0.9848, 0.0000,  0.1736,  # +0.175 rad pitch down
