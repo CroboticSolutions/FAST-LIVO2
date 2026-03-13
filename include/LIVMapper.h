@@ -100,6 +100,7 @@ public:
   double lidar_time_offset = 0.0;
 
   bool gravity_align_en = false, gravity_align_finished = false;
+  double initial_yaw_offset = 0.0;  // degrees, applied around world Z after gravity alignment
 
   bool sync_jump_flag = false;
 

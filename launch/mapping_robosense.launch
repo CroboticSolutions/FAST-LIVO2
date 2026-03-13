@@ -15,18 +15,16 @@
         <!-- no TF between world and rs_lidar (seems ok in world frame for now, myb included in config already !-->
         <!-- what are the exact extrinsicts and what should we expect, where should pointcloud should in lidar"!-->
 		<!-- rslidar_imu → rslidar: from extrinsic_T/R (factory IMU-LiDAR calibration inside Airy) -->
-        <node pkg="tf" type="static_transform_publisher" name="rslidar_imu_to_rslidar"
-             args="0.004156 0.004265 -0.004468 0.70711 -0.70709 0.001831 0.000660 rslidar_imu rslidar 100" />
+    <node pkg="tf" type="static_transform_publisher" name="rslidar_imu_to_rslidar"
+        args="0.004156 0.004265 -0.004468 0.70711 -0.70709 0.001831 0.000660 rslidar_imu rslidar 100" />
 
 	<!-- rslidar → minithex_base: inverse of CAD model transform -->
-        <node pkg="tf" type="static_transform_publisher" name="rslidar_to_minithex_base"
-             args="-0.000011 0.03847 -0.03931 3.14 0.0 -2.35619 rslidar minithex_base 100" />
+	<!-- -->
+    <node pkg="tf" type="static_transform_publisher" name="rslidar_to_minithex_base"
+        args="-0.000011 0.03847 -0.03931 3.14 0.0 -2.35619 rslidar minithex_base 100" />
 
-        <!--node pkg="tf" type="static_transform_publisher" name="minithex_base_to_rslidar_int"
-             args="-0.0000 0.0 0.000 3.14 0.0 0.0 minithex_base rslidar_int 100" />
-
-        <node pkg="tf" type="static_transform_publisher" name="rslidar_int_to_rslidar"
-             args="-0.000 -0.0 -0.000 0.0 0.0 -2.35619 rslidar_int rslidar 100" /!-->
+	<!-- Publish world -> minithex_base as PoseStamped on /tf_pose/world_to_minithex_base -->
+	<node pkg="fast_livo" type="tf_to_pose.py" name="tf_to_pose" output="screen" />
 
 	<!-- When running on the real robot, relay /aft_mapped_to_init odometry as world→minithex_base TF -->
 	<group if="$(arg real_robot)">

@@ -75,6 +75,7 @@ void LIVMapper::readParameters(ros::NodeHandle &nh)
   nh.param<double>("time_offset/lidar_time_offset", lidar_time_offset, 0.0);
   nh.param<bool>("uav/imu_rate_odom", imu_prop_enable, false);
   nh.param<bool>("uav/gravity_align_en", gravity_align_en, false);
+  nh.param<double>("uav/initial_yaw_offset", initial_yaw_offset, 0.0);
 
   nh.param<string>("evo/seq_name", seq_name, "01");
   nh.param<bool>("evo/pose_output_en", pose_output_en, false);
@@ -229,7 +230,8 @@ void LIVMapper::gravityAlignment()
     std::cout << "Gravity Alignment Starts" << std::endl;
     V3D ez(0, 0, -1), gz(_state.gravity);
     Quaterniond G_q_I0 = Quaterniond::FromTwoVectors(gz, ez);
-    M3D G_R_I0 = G_q_I0.toRotationMatrix();
+    M3D Rz_offset = Eigen::AngleAxisd(initial_yaw_offset * M_PI / 180.0, V3D::UnitZ()).toRotationMatrix();
+    M3D G_R_I0 = Rz_offset * G_q_I0.toRotationMatrix();
 
     _state.pos_end = G_R_I0 * _state.pos_end;
     _state.rot_end = G_R_I0 * _state.rot_end;

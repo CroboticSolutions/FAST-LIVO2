@@ -74,6 +74,9 @@ local_map:
 uav:
   imu_rate_odom: false
   gravity_align_en: true
+  # If lidar orientation is different from the minithex config it could break the init alignment
+  # Configured for UTWente flight lab and minithex with orientation that's configured now (13.3.2026.)
+  initial_yaw_offset: -90.0  # degrees, rotates world Z after gravity alignment to match r)eal world
 
 publish:
   dense_map_en: true
