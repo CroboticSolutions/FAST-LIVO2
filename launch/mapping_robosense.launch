@@ -8,12 +8,25 @@
 	<rosparam command="load" file="$(find fast_livo)/config/robosense_airy.yaml" />
 
 	<node pkg="fast_livo" type="fastlivo_mapping" name="laserMapping" output="screen">
-		<rosparam file="$(find fast_livo)/config/camera_pinhole.yaml" />
+		<rosparam file="$(find fast_livo)/config/camera_pinhole.yaml" /> 
 	</node>
 
 	<!-- here goes the TF between robot and LIDAR -->
-	<node pkg="tf" type="static_transform_publisher" name="minithex_base_to_rslidar"
-		args="0 0 0.1 3.14159265 0 0 minithex_base rslidar 100" />
+        <!-- no TF between world and rs_lidar (seems ok in world frame for now, myb included in config already !-->
+        <!-- what are the exact extrinsicts and what should we expect, where should pointcloud should in lidar"!-->
+		<!-- rslidar_imu → rslidar: from extrinsic_T/R (factory IMU-LiDAR calibration inside Airy) -->
+        <node pkg="tf" type="static_transform_publisher" name="rslidar_imu_to_rslidar"
+             args="0.004156 0.004265 -0.004468 0.70711 -0.70709 0.001831 0.000660 rslidar_imu rslidar 100" />
+
+	<!-- rslidar → minithex_base: inverse of CAD model transform -->
+        <node pkg="tf" type="static_transform_publisher" name="rslidar_to_minithex_base"
+             args="-0.000011 0.03847 -0.03931 3.14 0.0 -2.35619 rslidar minithex_base 100" />
+
+        <!--node pkg="tf" type="static_transform_publisher" name="minithex_base_to_rslidar_int"
+             args="-0.0000 0.0 0.000 3.14 0.0 0.0 minithex_base rslidar_int 100" />
+
+        <node pkg="tf" type="static_transform_publisher" name="rslidar_int_to_rslidar"
+             args="-0.000 -0.0 -0.000 0.0 0.0 -2.35619 rslidar_int rslidar 100" /!-->
 
 	<!-- When running on the real robot, relay /aft_mapped_to_init odometry as world→minithex_base TF -->
 	<group if="$(arg real_robot)">

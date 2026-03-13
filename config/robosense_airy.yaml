@@ -13,18 +13,11 @@ extrin_calib:
   #extrinsic_R: [ 0., -1., 0.,
   #              -1., 0., 0.,
   #               0., 0., -1.]
-  # Robosense IMU Airy test data
+  # Robosense IMU Airy test data [only Airy, no UAV base]
   extrinsic_T: [ 0.004156, 0.004265, -0.004468 ]
   extrinsic_R: [-0.007468, -0.999971, 0.001664,
                 -0.999966, -0.007474, -0.003502,
                  0.003515, -0.001637, -0.999992]
-
-
-
-
-  #extrinsic_R: [ 0.9848, 0.0000,  0.1736,  # +0.175 rad pitch down
-  #               0.0000, 1.0000,  0.0000,
-  #              -0.1736, 0.0000,  0.9848]
                
   Rcl: [0.00610193,-0.999863,-0.0154172,
         -0.00615449,0.0153796,-0.999863,
@@ -39,7 +32,7 @@ time_offset:
 preprocess:
   point_filter_num: 1
   filter_size_surf: 0.1
-  lidar_type: 7 # Livox Avia CustomMsg (used with pointcloud_to_livox converter)
+  lidar_type: 7 # 7 is robosense airy
   scan_line: 96
   blind: 0.2
 
@@ -80,7 +73,7 @@ local_map:
 
 uav:
   imu_rate_odom: false
-  gravity_align_en: false
+  gravity_align_en: true
 
 publish:
   dense_map_en: true
