@@ -17,6 +17,17 @@
 	
 	<node pkg="image_transport" type="republish" name="republish" args="compressed in:=/left_camera/image raw out:=/left_camera/image" output="screen" respawn="true"/>
 
+	<!-- rslidar_imu → rslidar: identity in sim (IMU and LiDAR treated as co-located) -->
+	<node pkg="tf" type="static_transform_publisher" name="rslidar_imu_to_rslidar"
+	    args="0 0 0 0 0 0 rslidar_imu rslidar 100" />
+
+	<!-- rslidar → minithex_base: 0.1m Z offset + 90deg yaw to match real vehicle orientation -->
+	<node pkg="tf" type="static_transform_publisher" name="rslidar_to_minithex_base"
+	    args="0 0 0.1 0 0 0 rslidar minithex_base 100" />
+
+	<!-- Publish world -> minithex_base as PoseStamped on /tf_pose/world_to_minithex_base -->
+	<node pkg="fast_livo" type="tf_to_pose.py" name="tf_to_pose" output="screen" />
+
 	<!-- PointCloud to Livox CustomMsg converter -->
 	<node pkg="fast_livo" type="pointcloud_to_livox" name="pointcloud_to_livox" output="screen">
 		<param name="input_topic" value="/lidar3d/points/restamped" />

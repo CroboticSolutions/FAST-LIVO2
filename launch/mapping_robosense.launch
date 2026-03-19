@@ -21,7 +21,8 @@
 	<!-- rslidar → minithex_base: inverse of CAD model transform -->
 	<!-- -->
     <node pkg="tf" type="static_transform_publisher" name="rslidar_to_minithex_base"
-        args="-0.000011 0.03847 -0.03931 3.14 0.0 -2.35619 rslidar minithex_base 100" />
+        args="-0.000011 0.03847 -0.03931 3.14 0.0 -2.44346 rslidar minithex_base 100" />
+	<!--  2.44346 !--> 
 
 	<!-- Publish world -> minithex_base as PoseStamped on /tf_pose/world_to_minithex_base -->
 	<node pkg="fast_livo" type="tf_to_pose.py" name="tf_to_pose" output="screen" />
