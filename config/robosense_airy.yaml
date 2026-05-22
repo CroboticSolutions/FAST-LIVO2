@@ -30,7 +30,7 @@ time_offset:
   exposure_time_init: 0.0
 
 preprocess:
-  point_filter_num: 1
+  point_filter_num: 5
   filter_size_surf: 0.1
   lidar_type: 7 # 7 is robosense airy
   scan_line: 96
@@ -76,7 +76,7 @@ uav:
   gravity_align_en: true
   # If lidar orientation is different from the minithex config it could break the init alignment
   # Configured for UTWente flight lab and minithex with orientation that's configured now (13.3.2026.)
-  initial_yaw_offset: -90.0  # degrees, rotates world Z after gravity alignment to match r)eal world
+  initial_yaw_offset: -90.0  # degrees, rotates world Z after gravity alignment to match real world
   incorporate_lidar_to_base_tf: true  # transform aft_mapped_to_init into minithex_base frame → /slam/state
 
 # Static transforms used to compose rslidar_imu → minithex_base.
