@@ -54,6 +54,7 @@ public:
   void publish_visual_sub_map(const ros::Publisher &pubSubVisualMap);
   void publish_effect_world(const ros::Publisher &pubLaserCloudEffect, const std::vector<PointToPlane> &ptpl_list);
   void publish_odometry(const ros::Publisher &pubOdomAftMapped);
+  void publish_slam_state();
   void publish_mavros(const ros::Publisher &mavros_pose_publisher);
   void publish_path(const ros::Publisher pubPath);
   void readParameters(ros::NodeHandle &nh);
@@ -85,6 +86,7 @@ public:
   double match_time = 0, solve_time = 0, solve_const_H_time = 0;
 
   bool lidar_map_inited = false, pcd_save_en = false, pub_effect_point_en = false, pose_output_en = false, ros_driver_fix_en = false, hilti_en = false;
+  bool incorporate_lidar_to_base_tf = false;
   int pcd_save_interval = -1, pcd_index = 0;
   int pub_scan_num = 1;
 
@@ -96,6 +98,7 @@ public:
   double latest_ekf_time;
   nav_msgs::Odometry imu_prop_odom;
   ros::Publisher pubImuPropOdom;
+  ros::Publisher pubSlamState;
   double imu_time_offset = 0.0;
   double lidar_time_offset = 0.0;
 
@@ -129,6 +132,12 @@ public:
   vector<double> extrinR;
   vector<double> cameraextrinT;
   vector<double> cameraextrinR;
+  vector<double> lidar_to_base_T1_vec;   // rslidar_imu → rslidar translation
+  vector<double> lidar_to_base_Q1_vec;   // rslidar_imu → rslidar quaternion (xyzw)
+  vector<double> lidar_to_base_T2_vec;   // rslidar → minithex_base translation
+  vector<double> lidar_to_base_RPY2_vec; // rslidar → minithex_base (yaw, pitch, roll)
+  V3D imu_to_base_T = V3D::Zero();       // composed rslidar_imu → base translation
+  M3D imu_to_base_R = M3D::Identity();   // composed rslidar_imu → base rotation
   double IMG_POINT_COV;
 
   PointCloudXYZI::Ptr visual_sub_map;

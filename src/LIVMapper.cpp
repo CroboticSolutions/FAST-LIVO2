@@ -76,6 +76,16 @@ void LIVMapper::readParameters(ros::NodeHandle &nh)
   nh.param<bool>("uav/imu_rate_odom", imu_prop_enable, false);
   nh.param<bool>("uav/gravity_align_en", gravity_align_en, false);
   nh.param<double>("uav/initial_yaw_offset", initial_yaw_offset, 0.0);
+  nh.param<bool>("uav/incorporate_lidar_to_base_tf", incorporate_lidar_to_base_tf, false);
+
+  lidar_to_base_T1_vec.assign(3, 0.0);
+  lidar_to_base_Q1_vec = {0.0, 0.0, 0.0, 1.0};
+  lidar_to_base_T2_vec.assign(3, 0.0);
+  lidar_to_base_RPY2_vec.assign(3, 0.0);
+  nh.param<vector<double>>("lidar_to_base/T_rslidar_imu_to_rslidar", lidar_to_base_T1_vec, lidar_to_base_T1_vec);
+  nh.param<vector<double>>("lidar_to_base/Q_rslidar_imu_to_rslidar", lidar_to_base_Q1_vec, lidar_to_base_Q1_vec);
+  nh.param<vector<double>>("lidar_to_base/T_rslidar_to_base", lidar_to_base_T2_vec, lidar_to_base_T2_vec);
+  nh.param<vector<double>>("lidar_to_base/RPY_rslidar_to_base", lidar_to_base_RPY2_vec, lidar_to_base_RPY2_vec);
 
   nh.param<string>("evo/seq_name", seq_name, "01");
   nh.param<bool>("evo/pose_output_en", pose_output_en, false);
@@ -113,11 +123,41 @@ void LIVMapper::readParameters(ros::NodeHandle &nh)
   p_pre->blind_sqr = p_pre->blind * p_pre->blind;
 }
 
-void LIVMapper::initializeComponents() 
+void LIVMapper::initializeComponents()
 {
   downSizeFilterSurf.setLeafSize(filter_size_surf_min, filter_size_surf_min, filter_size_surf_min);
   extT << VEC_FROM_ARRAY(extrinT);
   extR << MAT_FROM_ARRAY(extrinR);
+
+  if (incorporate_lidar_to_base_tf)
+  {
+    // Build T1: rslidar_imu → rslidar from quaternion (xyzw) + translation
+    tf::Quaternion q1(lidar_to_base_Q1_vec[0], lidar_to_base_Q1_vec[1],
+                      lidar_to_base_Q1_vec[2], lidar_to_base_Q1_vec[3]);
+    q1.normalize();
+    tf::Vector3 t1(lidar_to_base_T1_vec[0], lidar_to_base_T1_vec[1], lidar_to_base_T1_vec[2]);
+    tf::Transform T_imu_rslidar(q1, t1);
+
+    // Build T2: rslidar → minithex_base from RPY (yaw, pitch, roll) + translation
+    // static_transform_publisher uses "yaw pitch roll" order; tf::Quaternion::setRPY takes (roll, pitch, yaw)
+    tf::Quaternion q2;
+    q2.setRPY(lidar_to_base_RPY2_vec[2], lidar_to_base_RPY2_vec[1], lidar_to_base_RPY2_vec[0]);
+    tf::Vector3 t2(lidar_to_base_T2_vec[0], lidar_to_base_T2_vec[1], lidar_to_base_T2_vec[2]);
+    tf::Transform T_rslidar_base(q2, t2);
+
+    // Compose: T_imu_base = T_imu_rslidar * T_rslidar_base
+    tf::Transform T_imu_base = T_imu_rslidar * T_rslidar_base;
+
+    tf::Matrix3x3 R_tf = T_imu_base.getBasis();
+    tf::Vector3 t_tf = T_imu_base.getOrigin();
+    for (int i = 0; i < 3; i++)
+      for (int j = 0; j < 3; j++)
+        imu_to_base_R(i, j) = R_tf[i][j];
+    imu_to_base_T = V3D(t_tf.x(), t_tf.y(), t_tf.z());
+
+    ROS_INFO("[lidar_to_base] Composed T_imu_base: t=(%.4f, %.4f, %.4f)",
+             imu_to_base_T(0), imu_to_base_T(1), imu_to_base_T(2));
+  }
 
   voxelmap_manager->extT_ << VEC_FROM_ARRAY(extrinT);
   voxelmap_manager->extR_ << MAT_FROM_ARRAY(extrinR);
@@ -208,6 +248,8 @@ void LIVMapper::initializeSubscribersAndPublishers(ros::NodeHandle &nh, image_tr
   mavros_pose_publisher = nh.advertise<geometry_msgs::PoseStamped>("/mavros/vision_pose/pose", 10);
   pubImage = it.advertise("/rgb_img", 1);
   pubImuPropOdom = nh.advertise<nav_msgs::Odometry>("/LIVO2/imu_propagate", 10000);
+  if (incorporate_lidar_to_base_tf)
+    pubSlamState = nh.advertise<nav_msgs::Odometry>("/slam/state", 10);
   imu_prop_timer = nh.createTimer(ros::Duration(0.004), &LIVMapper::imu_prop_callback, this);
   voxelmap_manager->voxel_map_pub_= nh.advertise<visualization_msgs::MarkerArray>("/planes", 10000);
 }
@@ -404,6 +446,7 @@ void LIVMapper::handleLIO()
   euler_cur = RotMtoEuler(_state.rot_end);
   geoQuat = tf::createQuaternionMsgFromRollPitchYaw(euler_cur(0), euler_cur(1), euler_cur(2));
   publish_odometry(pubOdomAftMapped);
+  if (incorporate_lidar_to_base_tf) publish_slam_state();
 
   double t3 = omp_get_wtime();
 
@@ -1310,6 +1353,73 @@ void LIVMapper::publish_odometry(const ros::Publisher &pubOdomAftMapped)
   transform.setRotation(q);
   br.sendTransform( tf::StampedTransform(transform, odomAftMapped.header.stamp, INIT_TF, TF_BASE) );
   pubOdomAftMapped.publish(odomAftMapped);
+}
+
+void LIVMapper::publish_slam_state()
+{
+  // Transform pose of rslidar_imu in world → pose of minithex_base in world.
+  // T_world_base = T_world_imu * T_imu_base
+  const M3D R_w_imu = _state.rot_end;
+  const V3D t_w_imu = _state.pos_end;
+
+  const M3D R_w_base = R_w_imu * imu_to_base_R;
+  const V3D t_w_base = t_w_imu + R_w_imu * imu_to_base_T;
+
+  nav_msgs::Odometry slamState;
+  slamState.header.frame_id = INIT_TF;
+  slamState.child_frame_id = "minithex_base";
+  slamState.header.stamp = ros::Time().fromSec(last_timestamp_lidar);
+
+  slamState.pose.pose.position.x = t_w_base(0);
+  slamState.pose.pose.position.y = t_w_base(1);
+  slamState.pose.pose.position.z = t_w_base(2);
+
+  Eigen::Quaterniond q_base(R_w_base);
+  q_base.normalize();
+  slamState.pose.pose.orientation.x = q_base.x();
+  slamState.pose.pose.orientation.y = q_base.y();
+  slamState.pose.pose.orientation.z = q_base.z();
+  slamState.pose.pose.orientation.w = q_base.w();
+
+  // Transform the 6x6 pose covariance [x,y,z,rx,ry,rz] using the Jacobian of the
+  // rigid-body transform.  With A = -skew(R_w_imu * imu_to_base_T):
+  //   Σ_base = J * Σ_imu * J^T,  J = [I  A; 0  I]
+  // → pos_block  = P + A*R*A^T
+  //   rot_block  = R               (orientation uncertainty is unchanged)
+  //   cross      = A*R  (top-right) and R*A^T (bottom-left)
+  const M3D pos_cov = _state.cov.block<3, 3>(3, 3);
+  const M3D rot_cov = _state.cov.block<3, 3>(0, 0);
+
+  const V3D lever = R_w_imu * imu_to_base_T;
+  M3D A;
+  A <<      0,  lever(2), -lever(1),
+      -lever(2),       0,  lever(0),
+       lever(1), -lever(0),       0;
+  A = -A;  // A = -skew(lever)
+
+  const M3D pos_cov_base = pos_cov + A * rot_cov * A.transpose();
+  const M3D cross_TR     = A * rot_cov;          // top-right block
+  const M3D cross_BL     = rot_cov * A.transpose(); // bottom-left block
+
+  slamState.pose.covariance.fill(0.0);
+  slamState.twist.covariance.fill(0.0);
+  for (int i = 0; i < 3; i++)
+  {
+    for (int j = 0; j < 3; j++)
+    {
+      slamState.pose.covariance[i * 6 + j]             = pos_cov_base(i, j);
+      slamState.pose.covariance[(i + 3) * 6 + (j + 3)] = rot_cov(i, j);
+      slamState.pose.covariance[i * 6 + (j + 3)]       = cross_TR(i, j);
+      slamState.pose.covariance[(i + 3) * 6 + j]       = cross_BL(i, j);
+    }
+  }
+
+  const M3D vel_cov = _state.cov.block<3, 3>(7, 7);
+  for (int i = 0; i < 3; i++)
+    for (int j = 0; j < 3; j++)
+      slamState.twist.covariance[i * 6 + j] = vel_cov(i, j);
+
+  pubSlamState.publish(slamState);
 }
 
 void LIVMapper::publish_mavros(const ros::Publisher &mavros_pose_publisher)

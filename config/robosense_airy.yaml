@@ -77,6 +77,17 @@ uav:
   # If lidar orientation is different from the minithex config it could break the init alignment
   # Configured for UTWente flight lab and minithex with orientation that's configured now (13.3.2026.)
   initial_yaw_offset: -90.0  # degrees, rotates world Z after gravity alignment to match r)eal world
+  incorporate_lidar_to_base_tf: true  # transform aft_mapped_to_init into minithex_base frame → /slam/state
+
+# Static transforms used to compose rslidar_imu → minithex_base.
+# Values come from the two static_transform_publisher nodes in mapping_robosense.launch.
+lidar_to_base:
+  # rslidar_imu → rslidar  (quaternion format: x y z qx qy qz qw)
+  T_rslidar_imu_to_rslidar: [0.004156, 0.004265, -0.004468]
+  Q_rslidar_imu_to_rslidar: [0.70711, -0.70709, 0.001831, 0.000660]  # xyzw
+  # rslidar → minithex_base  (RPY format from static_transform_publisher: yaw pitch roll [rad])
+  T_rslidar_to_base: [-0.000011, 0.03847, -0.03931]
+  RPY_rslidar_to_base: [3.14, 0.0, -2.35619]  # [yaw, pitch, roll]
 
 publish:
   dense_map_en: true
