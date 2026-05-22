@@ -249,7 +249,7 @@ void LIVMapper::initializeSubscribersAndPublishers(ros::NodeHandle &nh, image_tr
   pubImage = it.advertise("/rgb_img", 1);
   pubImuPropOdom = nh.advertise<nav_msgs::Odometry>("/LIVO2/imu_propagate", 10000);
   if (incorporate_lidar_to_base_tf)
-    pubSlamState = nh.advertise<nav_msgs::Odometry>("/slam/state", 10);
+    pubSlamState = nh.advertise<nav_msgs::Odometry>("/slam/odom/state", 10);
   imu_prop_timer = nh.createTimer(ros::Duration(0.004), &LIVMapper::imu_prop_callback, this);
   voxelmap_manager->voxel_map_pub_= nh.advertise<visualization_msgs::MarkerArray>("/planes", 10000);
 }
@@ -1389,6 +1389,7 @@ void LIVMapper::publish_slam_state()
   //   cross      = A*R  (top-right) and R*A^T (bottom-left)
   const M3D pos_cov = _state.cov.block<3, 3>(3, 3);
   const M3D rot_cov = _state.cov.block<3, 3>(0, 0);
+  const M3D vel_cov = _state.cov.block<3, 3>(7, 7);
 
   const V3D lever = R_w_imu * imu_to_base_T;
   M3D A;
@@ -1398,8 +1399,8 @@ void LIVMapper::publish_slam_state()
   A = -A;  // A = -skew(lever)
 
   const M3D pos_cov_base = pos_cov + A * rot_cov * A.transpose();
-  const M3D cross_TR     = A * rot_cov;          // top-right block
-  const M3D cross_BL     = rot_cov * A.transpose(); // bottom-left block
+  const M3D cross_TR     = A * rot_cov;
+  const M3D cross_BL     = rot_cov * A.transpose();
 
   slamState.pose.covariance.fill(0.0);
   slamState.twist.covariance.fill(0.0);
@@ -1411,13 +1412,9 @@ void LIVMapper::publish_slam_state()
       slamState.pose.covariance[(i + 3) * 6 + (j + 3)] = rot_cov(i, j);
       slamState.pose.covariance[i * 6 + (j + 3)]       = cross_TR(i, j);
       slamState.pose.covariance[(i + 3) * 6 + j]       = cross_BL(i, j);
+      slamState.twist.covariance[i * 6 + j]            = vel_cov(i, j);
     }
   }
-
-  const M3D vel_cov = _state.cov.block<3, 3>(7, 7);
-  for (int i = 0; i < 3; i++)
-    for (int j = 0; j < 3; j++)
-      slamState.twist.covariance[i * 6 + j] = vel_cov(i, j);
 
   pubSlamState.publish(slamState);
 }
