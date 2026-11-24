@@ -1276,6 +1276,90 @@ void LIVMapper::publish_odometry(const ros::Publisher &pubOdomAftMapped)
   odomAftMapped.header.stamp = ros::Time::now(); //.ros::Time()fromSec(last_timestamp_lidar);
   set_posestamp(odomAftMapped.pose.pose);
 
+  // FAST-LIVO2: [rotation error, position error, ...]
+  // ROS:       [position error, fixed-axis rotation error]
+  const Eigen::Matrix3d R = _state.rot_end;
+
+  Eigen::Matrix<double, 6, 6> pose_cov;
+  pose_cov.setZero();
+
+  // Position covariance, already expressed in the world frame
+  pose_cov.block<3, 3>(0, 0) =
+      _state.cov.block<3, 3>(3, 3);
+
+  // Position-orientation cross-covariance
+  pose_cov.block<3, 3>(0, 3) =
+      _state.cov.block<3, 3>(3, 0) * R.transpose();
+
+  pose_cov.block<3, 3>(3, 0) =
+      R * _state.cov.block<3, 3>(0, 3);
+
+  // Orientation covariance: body error to world error
+  pose_cov.block<3, 3>(3, 3) =
+      R * _state.cov.block<3, 3>(0, 0) * R.transpose();
+
+  // Remove small numerical asymmetries
+  pose_cov = (0.5 * (pose_cov + pose_cov.transpose())).eval();
+
+  // Never publish invalid covariance values
+  if (!pose_cov.allFinite()) {
+    ROS_ERROR_THROTTLE(5.0, "FAST-LIVO2 pose covariance is not finite");
+    return;
+  }
+
+  // Copy the 6x6 Eigen matrix into ROS's row-major array
+  for (int row = 0; row < 6; ++row) {
+    for (int col = 0; col < 6; ++col) {
+      odomAftMapped.pose.covariance[row * 6 + col] =
+          pose_cov(row, col);
+    }
+  }
+
+  // FAST-LIVO2 Estimated linear velocity
+
+  // FAST-LIVO2 estimates IMU velocity in the world frame.
+  // ROS Odometry expects twist in the child frame.
+  const Eigen::Vector3d vel_child =
+      R.transpose() * _state.vel_end;
+
+  // Convert velocity covariance to the child frame.
+  Eigen::Matrix3d vel_cov_child =
+      R.transpose() *
+      _state.cov.block<3, 3>(7, 7) *
+      R;
+
+  vel_cov_child =
+      0.5 * (vel_cov_child + vel_cov_child.transpose()).eval();
+
+  // Reject non-finite estimates.
+  if (!vel_child.allFinite() || !vel_cov_child.allFinite()) {
+    ROS_ERROR_THROTTLE(5.0, "Invalid FAST-LIVO2 velocity");
+    return;
+  }
+
+  odomAftMapped.twist.twist.linear.x = vel_child.x();
+  odomAftMapped.twist.twist.linear.y = vel_child.y();
+  odomAftMapped.twist.twist.linear.z = vel_child.z();
+
+  // Initialize twist covariance.
+  for (int i = 0; i < 36; ++i) {
+    odomAftMapped.twist.covariance[i] = 0.0;
+  }
+
+  // Linear-velocity covariance occupies the upper-left 3x3.
+  for (int row = 0; row < 3; ++row) {
+    for (int col = 0; col < 3; ++col) {
+      odomAftMapped.twist.covariance[row * 6 + col] =
+          vel_cov_child(row, col);
+    }
+  }
+
+  // Angular velocity is not provided by this publisher.
+  // Large uncertainty rather than claiming precision.
+  odomAftMapped.twist.covariance[21] = 1e6;
+  odomAftMapped.twist.covariance[28] = 1e6;
+  odomAftMapped.twist.covariance[35] = 1e6;
+
   static tf::TransformBroadcaster br;
   tf::Transform transform;
   tf::Quaternion q;

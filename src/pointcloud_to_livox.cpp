@@ -7,6 +7,7 @@
  */
 
 #include <ros/ros.h>
+#include <cmath>
 #include <sensor_msgs/PointCloud.h>
 #include <livox_ros_driver/CustomMsg.h>
 #include <livox_ros_driver/CustomPoint.h>
@@ -52,7 +53,7 @@ private:
 
         // Get number of points
         uint32_t point_count = cloud_msg->points.size();
-        livox_msg.point_num = point_count;
+        livox_msg.point_num = 0;
         livox_msg.points.reserve(point_count);
 
         // Check if intensity channel exists
@@ -69,6 +70,18 @@ private:
         // Convert each point
         for (size_t i = 0; i < point_count; ++i)
         {
+            const auto& p = cloud_msg->points[i];
+
+            const float range_sq =
+                p.x * p.x + p.y * p.y + p.z * p.z;
+
+            // Remove invalid points and max-range Gazebo returns
+            if (!std::isfinite(range_sq) ||
+                range_sq >= 29.95f * 29.95f)
+            {
+                continue;
+            }
+
             livox_ros_driver::CustomPoint point;
             
             // Set offset time (0 for all points since we don't have timing info per point)
@@ -106,6 +119,10 @@ private:
             
             livox_msg.points.push_back(point);
         }
+
+        // Update the number of valid converted points
+        livox_msg.point_num =
+            static_cast<uint32_t>(livox_msg.points.size());
 
         // Publish the converted message
         pub_.publish(livox_msg);
