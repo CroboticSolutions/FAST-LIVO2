@@ -1,110 +1,75 @@
-# FAST-LIVO2
+# FAST-LIVO2 — NDT_1.0
 
-## FAST-LIVO2: Fast, Direct LiDAR-Inertial-Visual Odometry
+This branch contains the FAST-LIVO2 modifications used in the
+AutoPilotNDT project, integrating LiDAR-inertial odometry with
+the simulated miniThex UAV and the GenoM/POM estimation pipeline.
 
-### 📢 News
+## Implemented Changes
 
-- 🔓 **2025-01-23**: Code released!  
-- 🎉 **2024-10-01**: Accepted by **T-RO '24**!  
-- 🚀 **2024-07-02**: Conditionally accepted.
+### 1. LiDAR Timestamp Synchronization
 
-### 📬 Contact
+- Updated `launch/mapping_sim.launch` to use the restamped
+  Gazebo LiDAR point cloud (`/lidar3d/points/restamped`).
+- Resolved the timestamp mismatch between simulated LiDAR
+  measurements and IMU data.
 
-For further inquiries or assistance, please contact [zhengcr@connect.hku.hk](mailto:zhengcr@connect.hku.hk).
+### 2. Odometry and Covariance Publication
 
-## 1. Introduction
+Modified `src/LIVMapper.cpp` to:
 
-FAST-LIVO2 is an efficient and accurate LiDAR-inertial-visual fusion localization and mapping system, demonstrating significant potential for real-time 3D reconstruction and onboard robotic localization in severely degraded environments.
+- Publish position and orientation covariance information
+  through ROS Odometry.
+- Publish linear velocity in the odometry child frame.
+- Publish the corresponding linear velocity covariance.
+- Explicitly represent unavailable angular velocity uncertainty.
 
-**Developer**: [Chunran Zheng 郑纯然](https://github.com/xuankuzcr)
+These changes provide additional state-estimation information
+for integration with the GenoM/POM pipeline.
 
-<div align="center">
-    <img src="pics/Framework.png" width = 100% >
-</div>
+### 3. LiDAR Point Cloud Processing
 
-### 1.1 Related video
+Modified `src/pointcloud_to_livox.cpp` to:
 
-Our accompanying video is now available on [**Bilibili**](https://www.bilibili.com/video/BV1Ezxge7EEi) and [**YouTube**](https://youtu.be/6dF2DzgbtlY).
+- Filter invalid LiDAR points.
+- Remove simulated maximum-range returns.
+- Update the reported point count after filtering.
 
-### 1.2 Related paper
+### 4. Simulation Sensor Configuration
 
-[FAST-LIVO2: Fast, Direct LiDAR-Inertial-Visual Odometry](https://arxiv.org/pdf/2408.14035)  
+Modified `config/sim.yaml`:
 
-[FAST-LIVO2 on Resource-Constrained Platforms](https://arxiv.org/pdf/2501.13876)  
+- Updated the LiDAR-IMU extrinsic translation to [0.0, 0.0, 0.1].
+- Preserved the LiDAR-inertial configuration used in the
+  working miniThex simulation.
 
-[FAST-LIVO: Fast and Tightly-coupled Sparse-Direct LiDAR-Inertial-Visual Odometry](https://arxiv.org/pdf/2203.00893)
+## Known Limitations and Future Improvements
 
-[FAST-Calib: LiDAR-Camera Extrinsic Calibration in One Second](https://www.arxiv.org/pdf/2507.17210)
+- Camera integration remains pending; the tested simulation
+  currently uses LiDAR-inertial odometry.
+- Sensor extrinsic calibration requires further verification.
+- The covariance representations and their interpretation
+  within POM require continued validation.
+- Performance and accuracy under different operating
+  conditions require additional evaluation.
+- Physical UAV deployment requires separate validation.
 
-### 1.3 Our hard-synchronized equipment
+These items are intentionally left unchanged in NDT_1.0.
 
-We open-source our handheld device, including CAD files, synchronization scheme, STM32 source code, wiring instructions, and sensor ROS driver. Access these resources at this repository: [**LIV_handhold**](https://github.com/xuankuzcr/LIV_handhold).
+## Deployment
 
-### 1.4 Our associate dataset: FAST-LIVO2-Dataset
-Our associate dataset [**FAST-LIVO2-Dataset**](https://connecthkuhk-my.sharepoint.com/:f:/g/personal/zhengcr_connect_hku_hk/ErdFNQtjMxZOorYKDTtK4ugBkogXfq1OfDm90GECouuIQA?e=KngY9Z) used for evaluation is also available online.
+This repository is part of the AutoPilotNDT software stack.
 
-### 1.5 Our LiDAR-camera calibration method
-The [**FAST-Calib**](https://github.com/hku-mars/FAST-Calib) toolkit is recommended. Its output extrinsic parameters can be directly filled into the YAML file. 
+Docker build and deployment configuration will be maintained
+in the `docker_files` repository.
 
-## 2. Prerequisited
+Because this branch modifies C++ source files, FAST-LIVO2
+must be rebuilt from the NDT_1.0 source for the changes
+to take effect.
 
-### 2.1 Ubuntu and ROS
+## Validation
 
-Ubuntu 18.04~20.04.  [ROS Installation](http://wiki.ros.org/ROS/Installation).
+The integrated system was tested in the existing AutoPilotNDT
+Docker simulation environment on November 24, 2026.
 
-### 2.2 PCL && Eigen && OpenCV
-
-PCL>=1.8, Follow [PCL Installation](https://pointclouds.org/). 
-
-Eigen>=3.3.4, Follow [Eigen Installation](https://eigen.tuxfamily.org/index.php?title=Main_Page).
-
-OpenCV>=4.2, Follow [Opencv Installation](http://opencv.org/).
-
-### 2.3 Sophus
-
-Sophus Installation for the non-templated/double-only version.
-
-```bash
-git clone https://github.com/strasdat/Sophus.git
-cd Sophus
-git checkout a621ff
-mkdir build && cd build && cmake ..
-make
-sudo make install
-```
-
-### 2.4 Vikit
-
-Vikit contains camera models, some math and interpolation functions that we need. Vikit is a catkin project, therefore, download it into your catkin workspace source folder.
-
-```bash
-# Different from the one used in fast-livo1
-cd catkin_ws/src
-git clone https://github.com/xuankuzcr/rpg_vikit.git 
-```
-
-## 3. Build
-
-Clone the repository and catkin_make:
-
-```
-cd ~/catkin_ws/src
-git clone https://github.com/hku-mars/FAST-LIVO2
-cd ../
-catkin_make
-source ~/catkin_ws/devel/setup.bash
-```
-
-## 4. Run our examples
-
-Download our collected rosbag files via OneDrive ([**FAST-LIVO2-Dataset**](https://connecthkuhk-my.sharepoint.com/:f:/g/personal/zhengcr_connect_hku_hk/ErdFNQtjMxZOorYKDTtK4ugBkogXfq1OfDm90GECouuIQA?e=KngY9Z)). 
-
-```
-roslaunch fast_livo mapping_avia.launch
-rosbag play YOUR_DOWNLOADED.bag
-```
-
-
-## 5. License
-
-The source code of this package is released under the [**GPLv2**](http://www.gnu.org/licenses/) license. For commercial use, please contact me at <zhengcr@connect.hku.hk> and Prof. Fu Zhang at <fuzhang@hku.hk> to discuss an alternative license.
+A clean Docker image rebuild and cross-machine deployment
+validation remain pending.
